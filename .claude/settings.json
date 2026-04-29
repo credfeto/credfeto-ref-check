@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(dotnet *)",
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh auth *)",
+      "Bash(gh repo *)",
+      "Bash(yamllint *)",
+      "Bash(ansible-lint *)",
+      "Bash(markdownlint *)",
+      "Bash(pre-commit *)",
+      "Bash(mkdir -p *)",
+      "Bash(cp *)",
+      "Bash(awk *)"
+    ]
+  }
+}
