@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 - Initial project setup - Roslyn-based tool to find unused public types from NuGet packages in a .NET solution
+- Unit tests for AnalysisSummary, TypeResult, TypeKind, AnalysisResult, and JsonOutput
 ### Fixed
 ### Changed
 ### Deprecated
