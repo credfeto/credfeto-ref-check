@@ -14,7 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for AnalysisSummary, TypeResult, TypeKind, AnalysisResult, and JsonOutput
 ### Fixed
 ### Changed
-- SDK - Updated DotNet SDK to 10.0.300
+- SDK - Updated DotNet SDK to 10.0.301
 ### Deprecated
 ### Removed
 ### Security
