@@ -1,4 +1,5 @@
 --- # Code review of PRs
+# Maintain in repo: cs-template
 name: "PR: Require Code Review"
 
 on:
