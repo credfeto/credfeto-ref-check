@@ -10,6 +10,10 @@
  - any: [ 'CHANGELOG.md' ]
 "Config Change":
  - any: [ 'src/**/*.json', '!src/global.json' ]
+"credfeto-ref-check":
+ - any: [ 'src/Credfeto.Ref.Check/**/*' ]
+"credfeto-ref-check-tests":
+ - any: [ 'src/Credfeto.Ref.Check.Tests/**/*' ]
 "dotnet":
  - any: [ 'src/**/*.csproj' ]
 "Editorconfig":
