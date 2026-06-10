@@ -1,61 +1,24 @@
 # Shell Script Instructions
 
+> Load when: any `.sh` file is present or shell script work is needed.
+
 [Back to Global Instructions Index](index.md)
 
 ## Shebang
 
-- Always prefer `#!/bin/sh` over `#!/bin/bash` for new scripts and when maintaining existing ones.
-- Only use `#!/bin/bash` if the script requires bash-specific functionality that cannot otherwise be achieved without shelling out to another executable — in that case the bash dependency is justified by the cost saved.
-- Keeping scripts to `#!/bin/sh` keeps them portable and avoids implicit reliance on bashisms that may not be available in all environments.
+- Prefer `#!/bin/sh`; only use `#!/bin/bash` if bash-specific functionality is genuinely required.
+- All `#!/bin/sh` scripts must pass `shellcheck` and `checkbashisms` before committing.
 
-## Linting
+## Output Helpers
 
-- All `#!/bin/sh` scripts must pass both `shellcheck` and `checkbashisms` before committing.
+> Applies to **standalone shell scripts only**. GitHub Actions `run:` steps use emoji indicators — see [github-workflows.instructions.md](github-workflows.instructions.md#step-output-formatting).
 
-## Visual Indicators
+Use `die`, `success`, and `info` for all user-facing output — never bare `echo` or `printf`. See [shell-scripts.examples.md](shell-scripts.examples.md) for implementations and usage examples.
 
-> These conventions apply to **standalone shell scripts only**. GitHub Actions `run:` steps use a different set of emoji indicators — see [github-workflows.instructions.md](github-workflows.instructions.md#step-output-formatting).
+- `die` — fatal error, red `✗` to stderr, exits non-zero
+- `success` — completion, green `✓`
+- `info` — progress/step announcement, green `→`
 
-Use consistent coloured prefixes for outcome messages so that success and failure are immediately visible in terminal output:
+## AI Agent Detection
 
-- **Failure** — prefix with a red `✗`:
-
-```sh
-die() {
-    printf '\n\033[31m✗\033[0m %s\n' "$*"
-    exit 1
-}
-```
-
-- **Success** — prefix with a green `✓`:
-
-```sh
-success() {
-    printf '\n\033[32m✓\033[0m %s\n' "$*"
-}
-```
-
-- **Progress/info** — prefix with a green `→`:
-
-```sh
-info() {
-    printf '\n\033[32m→\033[0m %s\n' "$*"
-}
-```
-
-Use `printf` rather than `echo` for portable escape-sequence handling, and `"$*"` to pass the message as a single string (required for `shellcheck` and `checkbashisms` compliance).
-
-## No naked echo or printf
-
-Never use bare `echo` or `printf` for user-facing output. Always route through one of the three output functions:
-
-- `die` — fatal error, exits non-zero
-- `success` — step or overall completion
-- `info` — progress announcement before a step begins
-
-Interpolate any variables directly into the string argument rather than using a format string with separate arguments:
-
-```sh
-info "Opening port ${PORT}/tcp..."   # correct
-printf '→ Opening port %s/tcp...\n' "${PORT}"  # wrong — naked printf
-```
+Scripts that behave differently when invoked by an AI agent must use the standard `is_ai_agent` helper — see [shell-scripts.examples.md](shell-scripts.examples.md).
