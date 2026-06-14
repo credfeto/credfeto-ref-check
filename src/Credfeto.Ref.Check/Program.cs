@@ -13,35 +13,43 @@ internal static class Program
     {
         using CoconaApp app = CoconaApp.Create(args);
 
-        app.AddCommand(async (CheckOptions options, ILogger<CheckOptions> logger, CancellationToken cancellationToken) =>
-        {
-            if (string.IsNullOrWhiteSpace(options.Solution))
+        app.AddCommand(
+            async (CheckOptions options, ILogger<CheckOptions> logger) =>
             {
-                logger.LogError("--solution is required");
+                CancellationToken cancellationToken = app.Lifetime.ApplicationStopping;
 
-                return 1;
+                if (string.IsNullOrWhiteSpace(options.Solution))
+                {
+                    logger.LogError("--solution is required");
+
+                    return 1;
+                }
+
+                if (options.Packages.Length == 0)
+                {
+                    logger.LogError("At least one --packages prefix is required");
+
+                    return 1;
+                }
+
+                AnalysisResult result = await ReferenceChecker.CheckAsync(
+                    options.Solution,
+                    options.Packages,
+                    cancellationToken
+                );
+
+                if (options.Json)
+                {
+                    Console.WriteLine(JsonOutput.Serialise(result));
+                }
+                else
+                {
+                    PrintHumanReadable(result);
+                }
+
+                return 0;
             }
-
-            if (options.Packages.Count == 0)
-            {
-                logger.LogError("At least one --packages prefix is required");
-
-                return 1;
-            }
-
-            AnalysisResult result = await ReferenceChecker.CheckAsync(options.Solution, options.Packages, cancellationToken);
-
-            if (options.Json)
-            {
-                Console.WriteLine(JsonOutput.Serialise(result));
-            }
-            else
-            {
-                PrintHumanReadable(result);
-            }
-
-            return 0;
-        });
+        );
 
         await app.RunAsync(app.Lifetime.ApplicationStopping);
     }
@@ -52,11 +60,15 @@ internal static class Program
         {
             if (package.UnusedTypes.Count == 0)
             {
-                Console.WriteLine($"{package.PackageId} (all {package.TotalPublicTypes} types used)");
+                Console.WriteLine(
+                    $"{package.PackageId} (all {package.TotalPublicTypes} types used)"
+                );
             }
             else
             {
-                Console.WriteLine($"{package.PackageId} ({package.UnusedTypes.Count} of {package.TotalPublicTypes} types unused)");
+                Console.WriteLine(
+                    $"{package.PackageId} ({package.UnusedTypes.Count} of {package.TotalPublicTypes} types unused)"
+                );
 
                 foreach (TypeResult type in package.UnusedTypes)
                 {
@@ -64,13 +76,17 @@ internal static class Program
                         ? " (registration only)"
                         : string.Empty;
 
-                    Console.WriteLine($"  ✗ {type.FullyQualifiedName} [{type.Kind.GetName()}]{registrationNote}");
+                    Console.WriteLine(
+                        $"  ✗ {type.FullyQualifiedName} [{type.Kind.GetName()}]{registrationNote}"
+                    );
                 }
             }
 
             Console.WriteLine();
         }
 
-        Console.WriteLine($"Summary: {result.Summary.TotalUnusedTypes} unused types across {result.Summary.PackagesWithUnusedTypes} of {result.Summary.TotalPackages} packages");
+        Console.WriteLine(
+            $"Summary: {result.Summary.TotalUnusedTypes} unused types across {result.Summary.PackagesWithUnusedTypes} of {result.Summary.TotalPackages} packages"
+        );
     }
 }
