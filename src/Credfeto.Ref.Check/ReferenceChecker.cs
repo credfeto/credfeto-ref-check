@@ -45,15 +45,12 @@ public static class ReferenceChecker
             packagePrefixes,
             cancellationToken
         );
-        HashSet<string> metadataReferencedTypeKeys =
-            await MetadataReferenceWalker.CollectTypeReferencesAsync(nonTargetPaths);
-
-        return BuildAnalysisResult(
-            absolutePath,
-            typesByPackage,
-            references,
-            metadataReferencedTypeKeys
+        HashSet<string> metadataReferencedTypeKeys = await MetadataReferenceWalker.CollectTypeReferencesAsync(
+            nonTargetPaths,
+            cancellationToken
         );
+
+        return BuildAnalysisResult(absolutePath, typesByPackage, references, metadataReferencedTypeKeys);
     }
 
     private static async ValueTask<IReadOnlySet<string>> CollectNonTargetAssemblyPathsAsync(
@@ -82,11 +79,7 @@ public static class ReferenceChecker
 
                 string packageId = Path.GetFileNameWithoutExtension(display);
 
-                if (
-                    packagePrefixes.Any(prefix =>
-                        packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                    )
-                )
+                if (packagePrefixes.Any(prefix => packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -104,8 +97,7 @@ public static class ReferenceChecker
         CancellationToken cancellationToken
     )
     {
-        string solutionDir =
-            Path.GetDirectoryName(slnxPath) ?? Path.GetPathRoot(slnxPath) ?? string.Empty;
+        string solutionDir = Path.GetDirectoryName(slnxPath) ?? Path.GetPathRoot(slnxPath) ?? string.Empty;
         XDocument doc = XDocument.Load(slnxPath);
 
         IEnumerable<string> projectPaths = doc.Descendants("Project")
@@ -137,9 +129,7 @@ public static class ReferenceChecker
         CancellationToken cancellationToken
     )
     {
-        Dictionary<string, List<INamedTypeSymbol>> typesByPackage = new(
-            StringComparer.OrdinalIgnoreCase
-        );
+        Dictionary<string, List<INamedTypeSymbol>> typesByPackage = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> seenAssemblyPaths = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> seenAssemblyIdentities = new(StringComparer.OrdinalIgnoreCase);
 
@@ -189,11 +179,7 @@ public static class ReferenceChecker
 
             string packageId = Path.GetFileNameWithoutExtension(reference.Display);
 
-            if (
-                !packagePrefixes.Any(prefix =>
-                    packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                )
-            )
+            if (!packagePrefixes.Any(prefix => packageId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
@@ -228,12 +214,7 @@ public static class ReferenceChecker
         List<PackageResult> packages =
         [
             .. typesByPackage.Select(entry =>
-                BuildPackageResult(
-                    entry.PackageId,
-                    entry.Types,
-                    references,
-                    metadataReferencedTypeKeys
-                )
+                BuildPackageResult(entry.PackageId, entry.Types, references, metadataReferencedTypeKeys)
             ),
         ];
 
@@ -263,9 +244,7 @@ public static class ReferenceChecker
     {
         IReadOnlyList<INamedTypeSymbol> distinctTypes =
         [
-            .. allTypes
-                .GroupBy(static t => t.ToDisplayString(), StringComparer.Ordinal)
-                .Select(static g => g.First()),
+            .. allTypes.GroupBy(static t => t.ToDisplayString(), StringComparer.Ordinal).Select(static g => g.First()),
         ];
         List<TypeResult> unused = [];
 
@@ -291,8 +270,7 @@ public static class ReferenceChecker
         }
 
         unused.Sort(
-            static (a, b) =>
-                StringComparer.OrdinalIgnoreCase.Compare(a.FullyQualifiedName, b.FullyQualifiedName)
+            static (a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.FullyQualifiedName, b.FullyQualifiedName)
         );
 
         return new PackageResult
@@ -314,8 +292,7 @@ public static class ReferenceChecker
             return true;
         }
 
-        string metadataKey =
-            $"{type.ContainingNamespace?.ToDisplayString() ?? string.Empty}.{type.MetadataName}";
+        string metadataKey = $"{type.ContainingNamespace?.ToDisplayString() ?? string.Empty}.{type.MetadataName}";
 
         return metadataReferencedTypeKeys.Contains(metadataKey);
     }
