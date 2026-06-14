@@ -9,9 +9,12 @@ public sealed class CheckOptions : ICommandParameterSet
     [HasDefaultValue]
     public string Solution { get; init; } = string.Empty;
 
-    [Option('p', Description = "NuGet package name prefix to check (may be specified multiple times)")]
+    [Option(
+        'p',
+        Description = "NuGet package name prefix to check (may be specified multiple times)"
+    )]
     [HasDefaultValue]
-    public IReadOnlyList<string> Packages { get; init; } = [];
+    public string[] Packages { get; init; } = [];
 
     [Option('j', Description = "Output results as JSON")]
     [HasDefaultValue]
