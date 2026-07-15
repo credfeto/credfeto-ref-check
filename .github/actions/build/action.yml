@@ -132,9 +132,6 @@ inputs:
   GITHUB_TOKEN:
     description: 'Github Token'
     required: true
-  REPO_VISIBILITY:
-    description: 'Visibility of the repo'
-    required: true
   CREATE_RELEASE:
     description: 'Whether to create a release in github'
     required: true
@@ -157,8 +154,12 @@ runs:
   using: "composite"
   steps:
 
+    - name: "Check Repo Visibility"
+      uses: ./.github/actions/check-repo-visibility
+      id: visibility
+
     - name: "Parameter Summary"
-      uses: actions/github-script@v9.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       env:
         NUGET_API_KEY: ${{inputs.NUGET_API_KEY}}
       with:
@@ -199,7 +200,7 @@ runs:
 # yamllint enable rule:line-length
 
     - name: "Check Files Results"
-      uses: actions/github-script@v9.0.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
         script: |
           core.info('CSPROJ_EXIST: ${{steps.check_files.outputs.CSPROJ_EXIST}}');
@@ -237,7 +238,7 @@ runs:
 
     - name: "Set up QEMU"
       if: steps.check_files.outputs.DOCKERFILE_EXIST == 'true'
-      uses: docker/setup-qemu-action@v4.1.0
+      uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
 
     - name: "Configure Docker"
       if: steps.check_files.outputs.DOCKERFILE_EXIST == 'true'
@@ -277,17 +278,10 @@ runs:
       with:
         GITHUB_TOKEN: ${{inputs.GITHUB_TOKEN}}
 
-    - name: "Install Dotnet Build Check tool"
-      if: steps.check_files.outputs.SLN_EXIST == 'true'
-      uses: ./.github/actions/dotnet-tool
-      with:
-        TOOL_NAME: "FunFair.BuildCheck"
-        TOOL_VERSION: "latest"
-
     - name: "Deploy check - Default"
       shell: bash
       run: |
-        { echo "DEPLOY=false"; } >> "$GITHUB_ENV"
+        { echo "DEPLOY=false"; echo "RELEASE=false"; } >> "$GITHUB_ENV"
 
     - name: "Deploy check - Is main or master"
       if: endsWith(env.BUILD_VERSION, '-main') || endsWith(env.BUILD_VERSION, '-master')
@@ -476,7 +470,7 @@ runs:
 
     - name: "Dotnet: NPM Deploy"
       if: |-
-        steps.check_files.outputs.NPM_EXIST == 'true' &&
+        (steps.check_files.outputs.NPM_EXIST_SRC == 'true' || steps.check_files.outputs.NPM_EXIST_ROOT == 'true') &&
         steps.check_files.outputs.NPM_SIGNING_EXIST == 'true' &&
         env.DEPLOY == 'true'
       uses: ./.github/actions/sleet
@@ -502,7 +496,7 @@ runs:
       if: steps.build_tools.outputs.BUILD_ENV == 'true'
       uses: ./.github/actions/sbom
       with:
-        REPO_VISIBILITY: ${{inputs.REPO_VISIBILITY}}
+        REPO_VISIBILITY: ${{steps.visibility.outputs.is_public == 'true' && 'public' || 'private'}}
 
     ############################################################################################################
     # Upload Sarif files to GitHub
@@ -510,4 +504,4 @@ runs:
     - name: "Upload SARIF file for diagnostics"
       uses: ./.github/actions/sarif
       with:
-        REPO_VISIBILITY: ${{inputs.REPO_VISIBILITY}}
+        REPO_VISIBILITY: ${{steps.visibility.outputs.is_public == 'true' && 'public' || 'private'}}
