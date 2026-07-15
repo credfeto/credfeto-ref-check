@@ -19,18 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  HEAD_REF: ${{github.head_ref}}
-  BASE_REF: ${{github.base_ref}}
   REPO: ${{github.repository}}
   REPO_OWNER: ${{github.repository_owner}}
 
 jobs:
   pull-request:
     runs-on: ubuntu-latest
-
-    env:
-      CREATE_DRAFT: true
-      REPO_STATUS: private
 
     steps:
       - name: "Initialise Workspace"
@@ -48,7 +42,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -61,7 +55,7 @@ jobs:
 
       - name: "Existing PR Information"
         if: steps.findPr.outputs.number != ''
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUMBER: ${{steps.findPr.outputs.number}}
         with:
@@ -93,51 +87,53 @@ jobs:
             exit 1
           fi
 
-      - name: "Check Repo Visibility"
-        if: env.REPO_STATUS == '' && steps.findPr.outputs.number == ''
-        uses: ./.github/actions/check-repo-visibility
-        id: visibility
-        with:
-          github-token: ${{secrets.SOURCE_PUSH_TOKEN}}
-
-      - name: "Override DRAFT Flag"
-        id: draft-flag
-        if: |-
-          steps.findPr.outputs.number == ''
-          && env.REPO_OWNER != 'funfair-tech'
-          && env.REPO_STATUS == 'private'
-        shell: bash
-        run: echo "create-draft=false" >> "$GITHUB_OUTPUT"
-
       - name: "Status"
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           FIND_PR_NUMBER: ${{steps.findPr.outputs.number}}
         with:
           script: |
+            const prOk = process.env.FIND_PR_NUMBER === '';
+
             core.info(`Repo: ${process.env.REPO}`);
             core.info(`Owner: ${process.env.REPO_OWNER}`);
-            core.info(`Repo Status: ${process.env.REPO_STATUS}`);
-            core.info(`PR OK: ${process.env.FIND_PR_NUMBER === ''}`);
-            core.info(`Owner OK: ${process.env.REPO_OWNER !== 'funfair-tech'}`);
-            core.info(`Status OK: ${process.env.REPO_STATUS === 'private'}`);
+            core.info(`PR OK: ${prOk}`);
+
+            await core.summary
+              .addHeading('Status')
+              .addTable([
+                [{data: 'Property', header: true}, {data: 'Value', header: true}],
+                ['Repo', process.env.REPO],
+                ['Owner', process.env.REPO_OWNER],
+                ['PR OK', prOk ? '✅ Yes' : '❌ No'],
+              ])
+              .write();
+
+      - name: "Check Required Secrets"
+        if: steps.findPr.outputs.number == ''
+        shell: bash
+        run: |
+          if [ -z "${{secrets.PR_CREATE_TOKEN}}" ]; then
+            echo "::error::PR_CREATE_TOKEN is required but not set"
+            exit 1
+          fi
 
       - name: "Create Pull Request"
         if: steps.findPr.outputs.number == ''
         id: open-pr
         uses: ./.github/actions/create-pull-request
         with:
-          github-token: ${{github.token}}
+          github-token: ${{secrets.PR_CREATE_TOKEN}}
           destination-branch: "main"
           assignee: ${{github.actor}}
           labels: "auto-pr"
-          draft: ${{steps.draft-flag.outputs.create-draft || env.CREATE_DRAFT}}
+          draft: true
           title: ${{steps.commit-info.outputs.commit-title}}
           body: ${{steps.pr-template.outputs.content}}
 
       - name: "New PR Details"
         if: steps.findPr.outputs.number == ''
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_URL: ${{steps.open-pr.outputs.pr_url}}
           PR_NUMBER: ${{steps.open-pr.outputs.pr_number}}
@@ -147,6 +143,16 @@ jobs:
             core.info(`URL: ${process.env.PR_URL}`);
             core.info(`PR: ${process.env.PR_NUMBER}`);
             core.info(`CF: ${process.env.HAS_CHANGED_FILES}`);
+
+            await core.summary
+              .addHeading('New PR Details')
+              .addTable([
+                [{data: 'Property', header: true}, {data: 'Value', header: true}],
+                ['URL', process.env.PR_URL],
+                ['PR', process.env.PR_NUMBER],
+                ['CF', process.env.HAS_CHANGED_FILES],
+              ])
+              .write();
 
       - name: "Sync Labels"
         if: steps.findPr.outputs.number == ''
