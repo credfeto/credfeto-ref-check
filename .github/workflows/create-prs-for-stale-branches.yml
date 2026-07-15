@@ -8,7 +8,6 @@ on:
       - "main"
     paths:
       - ".github/workflows/create-prs-for-stale-branches.yml"
-      - ".github/actions/check-repo-visibility/**"
       - ".github/actions/find-pull-request/**"
       - ".github/actions/read-file/**"
       - ".github/actions/create-pull-request/**"
@@ -55,7 +54,7 @@ jobs:
         run: sudo apt install -y jq
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
@@ -88,8 +87,6 @@ jobs:
         branch: ${{fromJson(needs.build-matrix.outputs.branches)}}
     env:
       BRANCH: ${{matrix.branch}}
-      CREATE_DRAFT: true
-      REPO_STATUS: private
 
     steps:
       - name: "Initialise Workspace"
@@ -107,7 +104,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
@@ -116,25 +113,12 @@ jobs:
           repository: ${{github.repository}}
 
       - name: "Check Required Secrets"
-        if: env.REPO_STATUS == '' && github.repository_owner != 'funfair-tech'
         shell: bash
         run: |
           if [ -z "${{secrets.SOURCE_PUSH_TOKEN}}" ]; then
             echo "::error::SOURCE_PUSH_TOKEN is required but not set"
             exit 1
           fi
-
-      - name: "Check Repo Visibility"
-        if: env.REPO_STATUS == '' && github.repository_owner != 'funfair-tech'
-        uses: ./.github/actions/check-repo-visibility
-        id: visibility
-        with:
-          github-token: ${{secrets.SOURCE_PUSH_TOKEN}}
-
-      - name: "Override DRAFT Flag"
-        if: github.repository_owner != 'funfair-tech' && env.REPO_STATUS == 'private'
-        shell: bash
-        run: echo "CREATE_DRAFT=false" >> "$GITHUB_ENV"
 
       - name: "Branch Detection"
         id: detection
@@ -146,7 +130,7 @@ jobs:
       # On Default branch
       - name: "On Default Branch"
         if: steps.detection.outputs.defaultbranch == matrix.branch
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info("On Default branch - don't do anything");
@@ -154,7 +138,7 @@ jobs:
       # On Non-Default branch
       - name: "On Non-Default branch"
         if: steps.detection.outputs.defaultbranch != matrix.branch
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info('On non-default branch');
@@ -216,6 +200,19 @@ jobs:
         with:
           path: ./.github/PULL_REQUEST_TEMPLATE.md
 
+      - name: "Check Required Secrets"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.ahead != 0
+          && steps.aheadbehind.outputs.dayssinceupdate > 7
+        shell: bash
+        run: |
+          if [ -z "${{secrets.PR_CREATE_TOKEN}}" ]; then
+            echo "::error::PR_CREATE_TOKEN is required but not set"
+            exit 1
+          fi
+
       - name: "Create PR"
         if: |-
           steps.detection.outputs.defaultbranch != matrix.branch
@@ -225,12 +222,12 @@ jobs:
         id: open-pr
         uses: ./.github/actions/create-pull-request
         with:
-          github-token: ${{github.token}}
+          github-token: ${{secrets.PR_CREATE_TOKEN}}
           source-branch: ${{matrix.branch}}
           destination-branch: ${{steps.detection.outputs.defaultbranch}}
           assignee: ${{github.actor}}
           labels: "auto-pr,stale"
-          draft: ${{env.CREATE_DRAFT}}
+          draft: true
           title: "${{steps.aheadbehind.outputs.COMMIT_MSG}} [No commits for ${{steps.aheadbehind.outputs.dayssinceupdate}} days]"
           body: "${{steps.pr-template.outputs.content}}"
 
@@ -240,7 +237,7 @@ jobs:
           && steps.find-pull-request.outputs.number == ''
           && steps.aheadbehind.outputs.ahead != 0
           && steps.aheadbehind.outputs.dayssinceupdate > 7
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info('URL: ${{steps.open-pr.outputs.pr_url}}');
@@ -270,7 +267,7 @@ jobs:
           && steps.aheadbehind.outputs.behind != 0
           && steps.aheadbehind.outputs.ahead != 0
           && steps.aheadbehind.outputs.dayssinceupdate > 7
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info('Rebase?');
@@ -303,7 +300,7 @@ jobs:
         if: |-
           steps.detection.outputs.defaultbranch != matrix.branch
           && steps.find-pull-request.outputs.number == ''
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info('Ahead: ${{steps.aheadbehind.outputs.ahead}}');

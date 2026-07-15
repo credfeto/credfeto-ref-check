@@ -18,7 +18,6 @@ concurrency:
 env:
   HEAD_REF: ${{github.head_ref}}
   BASE_REF: ${{github.base_ref}}
-  REPO_STATUS: private
 
 jobs:
   info:
@@ -40,7 +39,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Info"
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.info(`Branch: ${process.env.HEAD_REF}`);
@@ -48,6 +47,17 @@ jobs:
             core.info(`Repo: ${context.repo.owner}/${context.repo.repo}`);
             core.info(`Owner: ${context.repo.owner}`);
 
+            await core.summary
+              .addHeading('Info')
+              .addTable([
+                [{data: 'Property', header: true}, {data: 'Value', header: true}],
+                ['Branch', `${process.env.HEAD_REF}`],
+                ['Base Branch', `${process.env.BASE_REF}`],
+                ['Repo', `${context.repo.owner}/${context.repo.repo}`],
+                ['Owner', `${context.repo.owner}`],
+              ])
+              .write();
+  # @@required: merge
   include-changelog-entry:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -68,7 +78,7 @@ jobs:
 
       - name: "Checkout Source"
         if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 2
@@ -85,7 +95,7 @@ jobs:
 
       - name: "Report unchanged"
         if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template')) && env.CHANGES == '0'
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             core.setFailed('Changelog has not changed')
@@ -110,7 +120,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
@@ -151,6 +161,7 @@ jobs:
           TOOL_NAME: "changelog"
           TOOL_ARGUMENTS: "--changelog \"${{github.workspace}}/CHANGELOG.md\" --check-insert \"origin/${{github.base_ref}}\""
 
+  # @@required: merge
   does-not-contain-secrets:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -170,13 +181,13 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
 
       - name: "Check for leaks"
-        uses: trufflesecurity/trufflehog@v3.95.5
+        uses: trufflesecurity/trufflehog@27b0417c16317ca9a472a9a8092acce143b49c55 # v3.95.9
         id: trufflehog
         with:
           path: "${{ github.workspace }}"
@@ -188,6 +199,7 @@ jobs:
         if: steps.trufflehog.outcome == 'failure'
         run: exit 1
 
+  # @@required: merge
   has-no-merge-conflicts:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -207,7 +219,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -215,6 +227,7 @@ jobs:
       - name: "Check for merge conflicts"
         uses: ./.github/actions/check-no-merge-conflicts
 
+  # @@required: merge
   has-no-file-or-folder-case-sensitivity-issues:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -234,7 +247,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -242,6 +255,7 @@ jobs:
       - name: "Check for case conflicts"
         uses: ./.github/actions/check-no-case-sensitivity-conflicts
 
+  # @@required: merge
   no-ignored-files:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -261,7 +275,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -269,6 +283,7 @@ jobs:
       - name: "Check for ignored files"
         uses: ./.github/actions/check-no-ignored-files
 
+  # @@required: merge
   dependency-review:
     # Check that there are no dependencies with security problems in the PR
     if: github.event.pull_request.draft == false
@@ -288,24 +303,20 @@ jobs:
             echo "ACTIVE_USER=$USER"
           } >> "$GITHUB_ENV"
 
-      - if: env.REPO_STATUS == ''
-        name: "Check repo visibility"
-        uses: ./.github/actions/check-repo-visibility
-        id: visibility
-        with:
-          github-token: ${{github.token}}
-
       - name: "Checkout Source"
-        if: steps.visibility.outputs.is_public == 'true'
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
           fetch-tags: true
 
+      - name: "Check repo visibility"
+        uses: ./.github/actions/check-repo-visibility
+        id: visibility
+
       - name: "Dependency Review"
         if: steps.visibility.outputs.is_public == 'true'
-        uses: actions/dependency-review-action@v5.0.0
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
 
   no-merge-commits:
     # Check that there are no merge commits in the PR
@@ -330,7 +341,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -357,7 +368,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 1
@@ -386,6 +397,7 @@ jobs:
           TOOL_NAME: "changelog"
           TOOL_ARGUMENTS: "--changelog \"${{github.workspace}}/CHANGELOG.md\" --lint"
 
+  # @@required: main
   lint-code:
     if: |-
       github.event.pull_request.draft == false &&
@@ -407,7 +419,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           clean: true
           fetch-depth: 0
@@ -421,22 +433,24 @@ jobs:
           fi
 
       - name: "Run Linter"
-        uses: super-linter/super-linter@v8.6.0
+        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
+          CLOUDFORMATION_CONFIG_FILE: .cfnlintrc.yaml
           DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{secrets.SOURCE_PUSH_TOKEN}}
-          GITHUB_ACTIONS_CONFIG_FILE: actionlint.yaml
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
-          SAVE_SUPER_LINTER_SUMMARY: true
+          GITHUB_ACTIONS_CONFIG_FILE: actionlint.yaml
+          GITHUB_TOKEN: ${{secrets.SOURCE_PUSH_TOKEN}}
           MULTI_STATUS: true
+          SAVE_SUPER_LINTER_SUMMARY: true
+          SQLFLUFF_CONFIG_FILE: .sqlfluff
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_ANSIBLE: true
           VALIDATE_BASH: true
           VALIDATE_CLOUDFORMATION: true
           VALIDATE_CSS: true
-          VALIDATE_ENV: true
           VALIDATE_DOCKERFILE: true
           VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_ENV: true
           VALIDATE_GITHUB_ACTIONS: true
           VALIDATE_JSON: true
           VALIDATE_MD: true
@@ -444,7 +458,6 @@ jobs:
           VALIDATE_PYTHON: true
           VALIDATE_PYTHON_PYLINT: true
           VALIDATE_SQLFLUFF: true
-          SQLFLUFF_CONFIG_FILE: .sqlfluff
           VALIDATE_TYPESCRIPT_ES: true
           VALIDATE_XML: true
           VALIDATE_YAML: true
