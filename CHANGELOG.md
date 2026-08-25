@@ -17,10 +17,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.400
+- Build - Fixed FunFair.BuildCheck failures by aligning test dependencies with the xunit v3 AOT package family (xunit.v3.aot.mtp-v2, FunFair.Test.Common/Source.Generator 6.4.0.2617, NSubstitute 6.2.0, xunit.analyzers 2.0.0) and adding required IncludeAssets to package references
 ### Deprecated
 ### Removed
 ### Deployment Changes
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
 ## [0.0.0] - Project created
