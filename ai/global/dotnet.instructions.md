@@ -129,16 +129,22 @@ dotnet reportgenerator \
 
 **Do not pass multiple assemblies' `.cobertura.xml` files into a single `reportgenerator` run.** If assembly A references types from assembly B, running them together causes B's components to appear in A's coverage report, which falsely lowers A's measured coverage.
 
-When a combined view is needed (e.g. for a summary dashboard), run each assembly individually first, then produce one additional combined report as a separate step:
+When a combined view is needed (e.g. for a summary dashboard, or the coverage ratchet's single whole-repo percentage, see [coverage-ratchet.instructions.md](coverage-ratchet.instructions.md#net)), run each assembly individually first, then produce one additional combined report as a separate step, requesting both report types together:
 
 ```bash
 dotnet reportgenerator \
   -reports:"{repo-root}/coverage/*.coverage.cobertura.xml" \
   -targetdir:{repo-root}/coverage/combined \
-  -reporttypes:Html
+  -reporttypes:"Html;JsonSummary"
 ```
 
-The per-assembly reports remain the authoritative measure of test quality for each project.
+This writes the `Html` dashboard alongside `{repo-root}/coverage/combined/Summary.json`; the overall whole-repo line-coverage percentage is its `summary.linecoverage` field:
+
+```bash
+jq '.summary.linecoverage' {repo-root}/coverage/combined/Summary.json
+```
+
+The per-assembly reports remain the authoritative measure of test quality for each project; the combined run is only ever used for the single whole-repo figure, never as a per-assembly quality signal. The same assembly A/B cross-contamination caveat applies equally here.
 
 ### Specific Coverage Rules (MANDATORY)
 
@@ -440,6 +446,15 @@ When all target frameworks listed in a project file are .NET 9 or later, framewo
 - The corresponding negated guards (`#if !NET9_0_OR_GREATER`, etc.) are always false; remove the entire block including the body.
 - Delete any source files that exist solely as pre-.NET 9 fallback implementations (e.g. files named `*.net6.cs` or `*SourceGenerated.net6.cs` containing a `new Regex(...)` fallback for the `[GeneratedRegex]` source generator).
 - After removing the conditional blocks, verify the project still builds and all tests still pass; treat this as a separate commit from any feature or fix work.
+
+## Nullable Reference Types (MANDATORY)
+
+`<Nullable>enable</Nullable>` is a project-wide requirement for all code in this repo (enforced by `FunFair.BuildCheck`'s `Nullable` policy) and warnings are errors (see [Warning Suppression and Errors](#warning-suppression-and-errors) below). Every caller of every member, public or otherwise, is therefore itself built under `#nullable enable`: a caller passing null into a non-nullable parameter is a compiler-reported bug at the call site, not a runtime condition the callee needs to defend against.
+
+- Do not add `ArgumentNullException.ThrowIfNull(...)` or hand-written null guards for parameters typed as non-nullable reference types, on any member, public, internal, or private. Reaching that check at runtime means the compiler-enforced contract was already violated; fix the call site, do not add a defensive check for it.
+- This does not relax [Input Validation](security.instructions.md#input-validation) for untrusted external input (deserialised request bodies, query strings, file contents, env vars, message queue payloads): deserialisers, reflection, and non-nullable-aware callers outside this codebase can all still produce a runtime null despite a non-nullable annotation, so those boundaries keep validating in full.
+- If a parameter's nullability is genuinely uncertain at the call site (deserialisation, an external API contract, a third-party library without nullable annotations), type it `T?` and handle the null explicitly, rather than declaring it non-nullable and adding a guard to compensate.
+- Do not widen a type or member's visibility (`private`→`internal`, `internal`→`public`) solely to make a null-argument path testable. If the only reason to reach a member from a test is to pass `null` (typically via the null-forgiving operator `!`) against a non-nullable parameter, that call is not a real scenario any compiler-checked caller can produce, so there is nothing to test; removing the guard per this section also removes the coverage obligation for that path, see [Code Coverage](code-quality.instructions.md#code-coverage).
 
 ## Warning Suppression and Errors
 

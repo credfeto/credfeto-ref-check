@@ -58,9 +58,9 @@
     <ProjectReference Include="..\Credfeto.Ref.Check\Credfeto.Ref.Check.csproj"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FunFair.Test.Common" Version="6.2.21.2185"/>
-    <PackageReference Include="NSubstitute" Version="5.3.0"/>
-    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2"/>
+    <PackageReference Include="FunFair.Test.Common" Version="6.4.0.2617" IncludeAssets="compile;runtime"/>
+    <PackageReference Include="NSubstitute" Version="6.2.0" IncludeAssets="compile;runtime"/>
+    <PackageReference Include="xunit.v3.aot.mtp-v2" Version="4.0.0" IncludeAssets="all"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime"/>
@@ -68,7 +68,7 @@
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.127.1366" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" PrivateAssets="all" ExcludeAssets="runtime"/>
     <PackageReference Include="FunFair.CodeAnalysis" Version="7.1.21.1364" PrivateAssets="All" ExcludeAssets="runtime"/>
-    <PackageReference Include="FunFair.Test.Source.Generator" Version="6.2.21.2185" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="FunFair.Test.Source.Generator" Version="6.4.0.2617" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="Meziantou.Analyzer" Version="2.0.212" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" PrivateAssets="All" ExcludeAssets="runtime"/>
@@ -81,6 +81,6 @@
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime"/>
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime"/>
-    <PackageReference Include="xunit.analyzers" Version="1.27.0" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="xunit.analyzers" Version="2.0.0" PrivateAssets="All" ExcludeAssets="runtime"/>
   </ItemGroup>
 </Project>
