@@ -9,7 +9,6 @@
     <DebuggerSupport>true</DebuggerSupport>
     <Description>Tests for Credfeto.Ref.Check</Description>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-    <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -55,7 +54,7 @@
   </ItemGroup>
   <Import Project="$(SolutionDir)UnitTests.props" Condition="Exists('$(SolutionDir)UnitTests.props')"/>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.Ref.Check\Credfeto.Ref.Check.csproj"/>
+    <ProjectReference Include="../Credfeto.Ref.Check/Credfeto.Ref.Check.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FunFair.Test.Common" Version="6.4.0.2617" IncludeAssets="compile;runtime"/>
