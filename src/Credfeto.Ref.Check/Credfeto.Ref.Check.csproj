@@ -9,7 +9,7 @@
     <DebuggerSupport>true</DebuggerSupport>
     <Description>Roslyn-based tool to find unused public types from NuGet packages in a .NET solution</Description>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-    <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnablePackageValidation>true</EnablePackageValidation>
     <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
