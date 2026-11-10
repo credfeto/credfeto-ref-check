@@ -22,7 +22,7 @@ ref-check --solution <path-to.slnx> --packages <prefix> [--packages <prefix>] [-
 ### Options
 
 | Option | Description |
-|--------|-------------|
+| ------ | ----------- |
 | `--solution` | Path to the `.slnx` or `.sln` solution file (required) |
 | `--packages` | NuGet package name prefix to check (required, may be specified multiple times) |
 | `--json` | Output results as JSON instead of human-readable text |
@@ -51,7 +51,7 @@ ref-check --solution ./src/MyApp.slnx --packages FunFair.Common --json
 
 ### Human-readable (default)
 
-```
+```text
 FunFair.Common.BackgroundServices
   ✗ FunFair.Common.BackgroundServices.TimedHostedServiceBase
   ✗ FunFair.Common.BackgroundServices.IBackgroundServiceMonitor
